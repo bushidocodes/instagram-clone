@@ -81,7 +81,7 @@ function initializeMedia() {
       }
 
       return new Promise((resolve, reject) =>
-        getUserMedia.call(navigator, contrainers, resolve, reject)
+        getUserMedia.call(navigator, constraints, resolve, reject)
       );
     };
   }
@@ -106,8 +106,8 @@ captureButton.addEventListener("click", evt => {
     videoPlayer,
     0,
     0,
-    canvas.width,
-    videoPlayer.videoHeight / (videoPlayer.videoWidth / canvas.width) // maintain aspect ratio
+    canvasElement.width,
+    videoPlayer.videoHeight / (videoPlayer.videoWidth / canvasElement.width) // maintain aspect ratio
   );
   videoPlayer.srcObject.getVideoTracks().forEach(track => track.stop());
   picture = dataURItoBlob(canvasElement.toDataURL());
@@ -270,7 +270,6 @@ function submitPost() {
   postData.append("file", picture, id + ".png");
   postData.append("rawLocationLat", fetchedLocation.lat);
   postData.append("rawLocationLng", fetchedLocation.lng);
-  postData.append("file", picture, id + ".png");
   console.log(`[App] Submitting post data`, postData);
 
   return fetch(
