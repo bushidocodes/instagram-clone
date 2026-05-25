@@ -2,3 +2,8 @@
 node_modules
 dist
 functions/pwagram-fb-key.json
+
+# Test output
+test-results/
+playwright-report/
+coverage/
