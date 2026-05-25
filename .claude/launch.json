@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Frontend (http-server)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 1338
+    },
+    {
+      "name": "iOS WebKit Debug Proxy",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "remote-ios"],
+      "port": 9000
+    }
+  ]
+}
