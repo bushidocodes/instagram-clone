@@ -1,7 +1,7 @@
 importScripts("/src/js/idb.js");
 importScripts("/src/js/utils.js");
 
-const SW_VERSION = 78;
+const SW_VERSION = 79;
 
 // We use our static cache to store our App Shell
 const STATIC_CACHE_NAME = `static-v${SW_VERSION}`;
@@ -68,7 +68,7 @@ function trimCache(cacheName, maxItems) {
 function cacheAppShell() {
   return caches.open(STATIC_CACHE_NAME).then(cache => {
     console.log(`[Service Worker v${SW_VERSION}] Precaching App Shell`);
-    cache.addAll(STATIC_FILES);
+    return cache.addAll(STATIC_FILES);
   });
 }
 
