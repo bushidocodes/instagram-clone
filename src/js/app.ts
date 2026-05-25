@@ -1,3 +1,4 @@
+import '../css/main.css';
 import { urlBase64ToUint8Array } from './utils.js';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -12,7 +13,25 @@ declare global {
 }
 
 window.deferredPrompt = null;
-const enableNotificationsButtons = document.querySelectorAll(
+
+// ── Mobile drawer toggle ─────────────────────────────────────────────────────
+const menuBtn = document.querySelector<HTMLButtonElement>('#menu-btn');
+const drawer = document.querySelector<HTMLDivElement>('#drawer');
+const drawerOverlay = document.querySelector<HTMLDivElement>('#drawer-overlay');
+
+if (menuBtn && drawer && drawerOverlay) {
+  menuBtn.addEventListener('click', () => {
+    const isHidden = drawer.classList.toggle('hidden');
+    drawer.setAttribute('aria-hidden', String(isHidden));
+  });
+  drawerOverlay.addEventListener('click', () => {
+    drawer.classList.add('hidden');
+    drawer.setAttribute('aria-hidden', 'true');
+  });
+}
+
+// ── Notification helpers ─────────────────────────────────────────────────────
+const enableNotificationsButtons = document.querySelectorAll<HTMLButtonElement>(
   '.enable-notifications'
 );
 

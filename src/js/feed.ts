@@ -1,11 +1,17 @@
 import { getItems, writeItem, dataURItoBlob } from './utils.js';
 
-declare const componentHandler: { upgradeElement: (el: Element) => void };
-
 declare global {
   interface Window {
     SyncManager?: unknown;
   }
+}
+
+function showToast(message: string): void {
+  const toast = document.querySelector<HTMLDivElement>('#confirmation-toast')!;
+  const msg = document.querySelector<HTMLSpanElement>('#toast-message')!;
+  msg.textContent = message;
+  toast.classList.add('visible');
+  setTimeout(() => toast.classList.remove('visible'), 3000);
 }
 
 const shareImageButton = document.querySelector('#share-image-button') as HTMLButtonElement;
@@ -182,28 +188,26 @@ interface PostCard {
   location: string;
 }
 
-function createCard(card: PostCard) {
+function createCard(card: PostCard): void {
   const cardWrapper = document.createElement('div');
-  cardWrapper.className = 'shared-moment-card mdl-card mdl-shadow--2dp';
+  cardWrapper.className = 'shared-moment-card bg-white rounded-lg shadow-md overflow-hidden';
+
   const cardTitle = document.createElement('div');
-  cardTitle.className = 'mdl-card__title';
+  cardTitle.className = 'card-image-area bg-cover bg-center bg-no-repeat bg-black flex items-end';
   cardTitle.style.backgroundImage = `url(${card.image})`;
-  cardTitle.style.backgroundSize = 'cover';
-  cardTitle.style.backgroundRepeat = 'no-repeat';
-  cardTitle.style.backgroundColor = 'black';
-  cardTitle.style.backgroundPosition = 'center';
+
+  const cardTitleText = document.createElement('h2');
+  cardTitleText.className = 'p-3 text-white text-base font-medium drop-shadow';
+  cardTitleText.textContent = card.title;
+  cardTitle.appendChild(cardTitleText);
+
+  const cardText = document.createElement('div');
+  cardText.className = 'p-3 text-gray-600 text-center text-sm';
+  cardText.textContent = card.location;
+
   cardWrapper.appendChild(cardTitle);
-  const cardTitleTextElement = document.createElement('h2');
-  cardTitleTextElement.className = 'mdl-card__title-text';
-  cardTitleTextElement.textContent = card.title;
-  cardTitle.appendChild(cardTitleTextElement);
-  const cardSupportingText = document.createElement('div');
-  cardSupportingText.className = 'mdl-card__supporting-text';
-  cardSupportingText.textContent = card.location;
-  cardSupportingText.style.textAlign = 'center';
-  cardWrapper.appendChild(cardSupportingText);
-  componentHandler.upgradeElement(cardWrapper);
-  sharedMomentsArea.appendChild(cardWrapper);
+  cardWrapper.appendChild(cardText);
+  sharedMomentsArea!.appendChild(cardWrapper);
 }
 
 function createCards(cards: PostCard[]) {
@@ -272,10 +276,7 @@ async function submitPostViaSyncManager() {
   try {
     await writeItem('sync-posts', post);
     await (sw as any).sync.register('sync-new-posts');
-    const snackbarContainer = document.querySelector('#confirmation-toast');
-    (snackbarContainer as any).MaterialSnackbar.showSnackbar({
-      message: 'Your Post was saved for syncing!'
-    });
+    showToast('Your Post was saved for syncing!');
   } catch {
     // sync registration failed — post remains in IDB and will retry
   }
