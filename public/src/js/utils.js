@@ -10,11 +10,9 @@ const dbPromise = idb.open("posts-store", 1, db => {
 });
 
 function writeItem(storeName, item) {
-  // console.log(`Writing item to ${storeName}`, item);
   return dbPromise.then(db => {
     const tx = db.transaction(storeName, "readwrite");
     const store = tx.objectStore(storeName);
-    console.log(item);
     store.put(item);
     return tx.complete;
   });
@@ -28,13 +26,11 @@ function getItems(storeName) {
 }
 
 function getItem(storeName, id) {
-  return dbPromise
-    .then(db => {
-      const tx = db.transaction(storeName, "readonly");
-      const store = tx.objectStore(storeName);
-      return store.get(id);
-    })
-    .then(() => console.log(`Item ${id} deleted`));
+  return dbPromise.then(db => {
+    const tx = db.transaction(storeName, "readonly");
+    const store = tx.objectStore(storeName);
+    return store.get(id);
+  });
 }
 function deleteItems(storeName) {
   return dbPromise.then(db => {
@@ -46,14 +42,12 @@ function deleteItems(storeName) {
 }
 
 function deleteItem(storeName, id) {
-  return dbPromise
-    .then(db => {
-      const tx = db.transaction(storeName, "readwrite");
-      const store = tx.objectStore(storeName);
-      store.delete(id);
-      return tx.complete;
-    })
-    .then(() => console.log(`Item ${id} deleted`));
+  return dbPromise.then(db => {
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
+    store.delete(id);
+    return tx.complete;
+  });
 }
 
 function urlBase64ToUint8Array(base64String) {
@@ -72,16 +66,12 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 function dataURItoBlob(dataURI) {
-  var byteString = atob(dataURI.split(",")[1]);
-  var mimeString = dataURI
-    .split(",")[0]
-    .split(":")[1]
-    .split(";")[0];
-  var ab = new ArrayBuffer(byteString.length);
-  var ia = new Uint8Array(ab);
-  for (var i = 0; i < byteString.length; i++) {
+  const byteString = atob(dataURI.split(",")[1]);
+  const mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
     ia[i] = byteString.charCodeAt(i);
   }
-  var blob = new Blob([ab], { type: mimeString });
-  return blob;
+  return new Blob([ab], { type: mimeString });
 }
