@@ -21,5 +21,8 @@
   "devDependencies": {
     "remotedebug-ios-webkit-adapter": "^0.2.2",
     "vite": "^8.0.14"
+  },
+  "dependencies": {
+    "idb": "^8.0.3"
   }
 }

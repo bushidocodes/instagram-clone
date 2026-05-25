@@ -1,7 +1,53 @@
 importScripts("/src/js/idb.js");
-importScripts("/src/js/utils.js");
 
-const SW_VERSION = 78;
+const SW_VERSION = 79;
+
+// Inlined from utils.js — the browser build now uses the `idb` npm package via
+// ES modules; the SW still uses the legacy importScripts path.  These helpers
+// will be removed when the SW is migrated to Workbox.
+const dbPromise = idb.open("posts-store", 1, db => {
+  if (!db.objectStoreNames.contains("posts")) {
+    db.createObjectStore("posts", { keyPath: "id" });
+  }
+  if (!db.objectStoreNames.contains("sync-posts")) {
+    db.createObjectStore("sync-posts", { keyPath: "id" });
+  }
+});
+
+function writeItem(storeName, item) {
+  return dbPromise.then(db => {
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
+    store.put(item);
+    return tx.complete;
+  });
+}
+
+function getItems(storeName) {
+  return dbPromise.then(db => {
+    const tx = db.transaction(storeName, "readonly");
+    const store = tx.objectStore(storeName);
+    return store.getAll();
+  });
+}
+
+function deleteItems(storeName) {
+  return dbPromise.then(db => {
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
+    store.clear();
+    return tx.complete;
+  });
+}
+
+function deleteItem(storeName, id) {
+  return dbPromise.then(db => {
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
+    store.delete(id);
+    return tx.complete;
+  });
+}
 
 const STATIC_CACHE_NAME = `static-v${SW_VERSION}`;
 const STATIC_FILES = [
@@ -15,10 +61,6 @@ const STATIC_FILES = [
   "/src/images/main-image.jpg",
   "/src/images/failwhale.jpg",
   "/manifest.json",
-  "/src/js/idb.js",
-  "/src/js/app.js",
-  "/src/js/feed.js",
-  "/src/js/utils.js",
   "/src/js/material.min.js",
   "https://fonts.googleapis.com/css?family=Roboto:400,700",
   "https://fonts.googleapis.com/icon?family=Material+Icons",
