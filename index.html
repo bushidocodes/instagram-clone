@@ -1,6 +1,5 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
@@ -8,9 +7,6 @@
   <title>PWAGram</title>
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,700" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css">
-  <link rel="stylesheet" href="/src/css/app.css">
-  <link rel="stylesheet" href="/src/css/feed.css">
   <!-- Link to the standard Manifest -->
   <link rel="manifest" href="/manifest.json">
   <!-- Safari Fallbacks -->
@@ -31,95 +27,99 @@
   <meta name="msapplication-TileColor" content="#fff">
   <meta name="theme-color" content="#3f51b5">
 </head>
-
-<body>
-
+<body class="font-[Roboto,sans-serif]">
   <div id="app">
-    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
-      <header class="mdl-layout__header">
-        <div class="mdl-layout__header-row">
-          <!-- Title -->
-          <span class="mdl-layout-title">PWAGram</span>
-          <!-- Add spacer, to align navigation to the right -->
-          <div class="mdl-layout-spacer"></div>
-          <!-- Navigation. We hide it in small screens. -->
-          <nav class="mdl-navigation mdl-layout--large-screen-only">
-            <a class="mdl-navigation__link" href="/">Feed</a>
-            <a class="mdl-navigation__link" href="/help/">Help</a>
-            <div class="drawer-option">
-              <button class="enable-notifications mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-color--accent">
-                Enable Notifications
-              </button>
-            </div>
-          </nav>
-        </div>
-      </header>
-      <div class="mdl-layout__drawer">
-        <span class="mdl-layout-title">PWAGram</span>
-        <nav class="mdl-navigation">
-          <a class="mdl-navigation__link" href="/">Feed</a>
-          <a class="mdl-navigation__link" href="/help/">Help</a>
-          <div class="drawer-option">
-            <button class="enable-notifications mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-color--accent">
-              Enable Notifications
-            </button>
-          </div>
+
+    <!-- Fixed header -->
+    <header class="fixed top-0 left-0 right-0 z-50 h-14 bg-indigo-700 shadow-md">
+      <div class="flex items-center h-full px-4">
+        <button id="menu-btn" class="mr-3 text-white md:hidden focus:outline-none" aria-label="Open menu">
+          <span class="material-icons">menu</span>
+        </button>
+        <span class="text-white text-xl font-medium">PWAGram</span>
+        <div class="flex-1"></div>
+        <nav class="hidden md:flex items-center gap-4">
+          <a class="text-white hover:text-indigo-200 font-medium text-sm" href="/">Feed</a>
+          <a class="text-white hover:text-indigo-200 font-medium text-sm" href="/help/">Help</a>
+          <button class="enable-notifications bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded text-sm font-medium transition-colors">
+            Enable Notifications
+          </button>
         </nav>
       </div>
-      <main class="mdl-layout__content mat-typography">
-        <div id="create-post">
-          <video id="player" autoplay></video>
-          <canvas id="canvas" width="320px" height="240px"></canvas>
-          <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="capture-btn">Capture</button>
-          <div id="pick-image">
-            <h6>Pick an Image Instead</h6>
-            <input type="file" accept="image/*" id="image-picker">
-          </div>
-          <form>
-            <div class="input-section mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-              <input class="mdl-textfield__input" type="text" id="title">
-              <label class="mdl-textfield__label" for="title" name="title">Title</label>
-            </div>
-            <div class="input-section mdl-textfield mdl-js-textfield mdl-textfield--floating-label" id="manual-location">
-              <input class="mdl-textfield__input" type="text" id="location">
-              <label class="mdl-textfield__label" for="location" name="location">Location</label>
-            </div>
-            <div class="input-section">
-              <button class="mdl-button mdl-js-button mdl-button--colored" type="button" id="location-btn">Get Location</button>
-              <div class="mdl-spinner mdl-js-spinner is-active" id="location-loader"></div>
-            </div>
-            <br>
-            <div>
-              <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-color--accent" type="submit" id="post-btn">Post!
-              </button>
-            </div>
-            <br>
-            <div>
-              <button class="mdl-button mdl-js-button mdl-button--fab" id="close-create-post-modal-btn" type="button">
-                <i class="material-icons">close</i>
-              </button>
-            </div>
-          </form>
-        </div>
-        <div class="page-content">
-          <h5 class="text-center mdl-color-text--primary">Share your Moments</h5>
-          <div id="shared-moments"></div>
-        </div>
-        <div class="floating-button">
-          <button class="mdl-button mdl-js-button mdl-button--fab mdl-button--colored" id="share-image-button">
-            <i class="material-icons">add</i>
+    </header>
+
+    <!-- Mobile drawer -->
+    <div id="drawer" class="fixed inset-0 z-40 hidden" aria-hidden="true">
+      <div id="drawer-overlay" class="absolute inset-0 bg-black/50"></div>
+      <div class="absolute left-0 top-0 bottom-0 w-64 bg-white shadow-xl flex flex-col pt-4">
+        <span class="px-4 pb-4 text-xl font-medium text-indigo-700 border-b border-gray-200">PWAGram</span>
+        <nav class="flex flex-col mt-2">
+          <a class="px-4 py-3 text-gray-700 hover:bg-gray-100 font-medium" href="/">Feed</a>
+          <a class="px-4 py-3 text-gray-700 hover:bg-gray-100 font-medium" href="/help/">Help</a>
+        </nav>
+        <div class="p-4 mt-auto">
+          <button class="enable-notifications w-full bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded text-sm font-medium transition-colors">
+            Enable Notifications
           </button>
         </div>
-        <div id="confirmation-toast" aria-live="assertive" aria-atomic="true" aria-relevant="text" class="mdl-snackbar mdl-js-snackbar">
-          <div class="mdl-snackbar__text"></div>
-          <button type="button" class="mdl-snackbar__action"></button>
-        </div>
-      </main>
+      </div>
     </div>
+
+    <main class="pt-14">
+      <!-- Create-post modal -->
+      <div id="create-post">
+        <video id="player" autoplay></video>
+        <canvas id="canvas" width="320px" height="240px"></canvas>
+        <button class="btn-primary mt-3" id="capture-btn">Capture</button>
+        <div id="pick-image">
+          <h6 class="text-gray-600 text-sm font-medium mt-4 mb-2">Pick an Image Instead</h6>
+          <input type="file" accept="image/*" id="image-picker">
+        </div>
+        <form class="p-4 w-full max-w-md mx-auto text-left">
+          <div class="input-section">
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="title">Title</label>
+            <input class="form-input" type="text" id="title" placeholder="Give your moment a title">
+          </div>
+          <div class="input-section" id="manual-location">
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="location">Location</label>
+            <input class="form-input" type="text" id="location" placeholder="Where was this taken?">
+          </div>
+          <div class="input-section flex items-center gap-3">
+            <button class="btn-secondary" type="button" id="location-btn">Get Location</button>
+            <div id="location-loader" class="spinner"></div>
+          </div>
+          <div class="input-section">
+            <button class="btn-accent w-full" type="submit" id="post-btn">Post!</button>
+          </div>
+          <div class="input-section text-center">
+            <button class="fab-close" id="close-create-post-modal-btn" type="button" aria-label="Close">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Feed -->
+      <div class="page-content px-4 py-6">
+        <h5 class="text-center text-indigo-700 font-medium text-lg mb-4">Share your Moments</h5>
+        <div id="shared-moments"></div>
+      </div>
+
+      <!-- FAB -->
+      <div class="floating-button">
+        <button class="w-14 h-14 rounded-full bg-pink-500 hover:bg-pink-600 text-white flex items-center justify-center shadow-lg transition-colors" id="share-image-button" aria-label="Share a moment">
+          <span class="material-icons">add</span>
+        </button>
+      </div>
+
+      <!-- Toast -->
+      <div id="confirmation-toast" class="toast" role="status" aria-live="polite">
+        <span id="toast-message"></span>
+      </div>
+    </main>
+
   </div>
-  <script defer src="/src/js/material.min.js"></script>
   <script type="module" src="/src/js/app.ts"></script>
   <script type="module" src="/src/js/feed.ts"></script>
 </body>
-
 </html>

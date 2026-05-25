@@ -6,7 +6,8 @@
     "moduleResolution": "bundler",
     "strict": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "allowArbitraryExtensions": true
   },
   "include": ["src/js/**/*.ts", "e2e/**/*.ts", "*.config.ts"],
   "exclude": ["src/js/**/*.test.ts"]
