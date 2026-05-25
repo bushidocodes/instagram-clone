@@ -113,8 +113,21 @@ captureButton.addEventListener("click", evt => {
   picture = dataURItoBlob(canvasElement.toDataURL());
 });
 
-imagePicker.addEventListener("change", event => {
-  picture = event.target.files[0];
+imagePicker.addEventListener("change", async event => {
+  const file = event.target.files[0];
+  if (!file) return;
+  // CSS background-image ignores EXIF orientation, so bake the rotation into
+  // the pixels now by drawing through a canvas with imageOrientation applied.
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const offscreen = document.createElement("canvas");
+    offscreen.width = bitmap.width;
+    offscreen.height = bitmap.height;
+    offscreen.getContext("2d").drawImage(bitmap, 0, 0);
+    offscreen.toBlob(blob => { picture = blob; }, file.type || "image/jpeg", 0.92);
+  } catch {
+    picture = file;
+  }
 });
 
 /**
