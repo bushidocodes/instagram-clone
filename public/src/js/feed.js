@@ -25,15 +25,28 @@ locationButton.addEventListener("click", () => {
   locationLoader.style.display = "block";
 
   navigator.geolocation.getCurrentPosition(
-    pos => {
-      locationButton.style.display = "inline";
-      locationLoader.style.display = "none";
+    async pos => {
       fetchedLocation = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude
       };
-      // TODO: replace with real reverse geocoding (PR 3)
-      locationInput.value = "In Alexandria, VA";
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${fetchedLocation.lat}&lon=${fetchedLocation.lng}`,
+          { headers: { "Accept-Language": navigator.language || "en" } }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const addr = data.address || {};
+          const place = addr.city || addr.town || addr.village || addr.suburb || addr.county || "";
+          const region = addr.state || addr.country || "";
+          locationInput.value = [place, region].filter(Boolean).join(", ");
+        }
+      } catch {
+        // geocoding failed — leave input empty so user can type manually
+      }
+      locationButton.style.display = "inline";
+      locationLoader.style.display = "none";
       document.querySelector("#manual-location").classList.add("is-focused");
     },
     () => {
