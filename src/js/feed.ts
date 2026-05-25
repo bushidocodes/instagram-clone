@@ -1,23 +1,31 @@
 import { getItems, writeItem, dataURItoBlob } from './utils.js';
 
-const shareImageButton = document.querySelector('#share-image-button');
-const createPostArea = document.querySelector('#create-post');
+declare const componentHandler: { upgradeElement: (el: Element) => void };
+
+declare global {
+  interface Window {
+    SyncManager?: unknown;
+  }
+}
+
+const shareImageButton = document.querySelector('#share-image-button') as HTMLButtonElement;
+const createPostArea = document.querySelector('#create-post') as HTMLDivElement;
 const closeCreatePostModalButton = document.querySelector(
   '#close-create-post-modal-btn'
-);
-const sharedMomentsArea = document.querySelector('#shared-moments');
-const form = document.querySelector('form');
-const titleInput = document.querySelector('#title');
-const locationInput = document.querySelector('#location');
-const videoPlayer = document.querySelector('#player');
-const canvasElement = document.querySelector('#canvas');
-const captureButton = document.querySelector('#capture-btn');
-const imagePicker = document.querySelector('#image-picker');
-const imagePickerArea = document.querySelector('#pick-image');
-let picture;
+) as HTMLButtonElement;
+const sharedMomentsArea = document.querySelector('#shared-moments') as HTMLDivElement;
+const form = document.querySelector('form') as HTMLFormElement;
+const titleInput = document.querySelector('#title') as HTMLInputElement;
+const locationInput = document.querySelector('#location') as HTMLInputElement;
+const videoPlayer = document.querySelector('#player') as HTMLVideoElement;
+const canvasElement = document.querySelector('#canvas') as HTMLCanvasElement;
+const captureButton = document.querySelector('#capture-btn') as HTMLButtonElement;
+const imagePicker = document.querySelector('#image-picker') as HTMLInputElement;
+const imagePickerArea = document.querySelector('#pick-image') as HTMLDivElement;
+let picture: Blob | undefined;
 
-const locationButton = document.querySelector('#location-btn');
-const locationLoader = document.querySelector('#location-loader');
+const locationButton = document.querySelector('#location-btn') as HTMLButtonElement;
+const locationLoader = document.querySelector('#location-loader') as HTMLDivElement;
 let fetchedLocation = { lat: 0, lng: 0 };
 
 locationButton.addEventListener('click', () => {
@@ -49,7 +57,7 @@ locationButton.addEventListener('click', () => {
       }
       locationButton.style.display = 'inline';
       locationLoader.style.display = 'none';
-      document.querySelector('#manual-location').classList.add('is-focused');
+      (document.querySelector('#manual-location') as HTMLElement).classList.add('is-focused');
     },
     () => {
       locationButton.style.display = 'inline';
@@ -72,19 +80,19 @@ function initializeLocation() {
  */
 async function initializeMedia() {
   if (!('mediaDevices' in navigator)) {
-    navigator.mediaDevices = {};
+    (navigator as unknown as { mediaDevices: MediaDevices }).mediaDevices = {} as MediaDevices;
   }
 
   if (!('getUserMedia' in navigator.mediaDevices)) {
-    navigator.mediaDevices.getUserMedia = constraints => {
+    (navigator.mediaDevices as any).getUserMedia = (constraints: MediaStreamConstraints) => {
       const getUserMedia =
-        navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+        (navigator as any).webkitGetUserMedia || (navigator as any).mozGetUserMedia;
 
       if (!getUserMedia) {
         return Promise.reject(new Error('getUserMedia is not implemented'));
       }
 
-      return new Promise((resolve, reject) =>
+      return new Promise<MediaStream>((resolve, reject) =>
         getUserMedia.call(navigator, constraints, resolve, reject)
       );
     };
@@ -103,7 +111,7 @@ captureButton.addEventListener('click', () => {
   canvasElement.style.display = 'block';
   videoPlayer.style.display = 'none';
   captureButton.style.display = 'none';
-  const context = canvasElement.getContext('2d');
+  const context = canvasElement.getContext('2d')!;
   context.drawImage(
     videoPlayer,
     0,
@@ -111,12 +119,12 @@ captureButton.addEventListener('click', () => {
     canvasElement.width,
     videoPlayer.videoHeight / (videoPlayer.videoWidth / canvasElement.width)
   );
-  videoPlayer.srcObject.getVideoTracks().forEach(track => track.stop());
+  (videoPlayer.srcObject as MediaStream).getVideoTracks().forEach(track => track.stop());
   picture = dataURItoBlob(canvasElement.toDataURL());
 });
 
 imagePicker.addEventListener('change', async event => {
-  const file = event.target.files[0];
+  const file = (event.target as HTMLInputElement).files![0];
   if (!file) return;
   // CSS background-image ignores EXIF orientation, so bake the rotation into
   // the pixels now by drawing through a canvas with imageOrientation applied.
@@ -125,8 +133,8 @@ imagePicker.addEventListener('change', async event => {
     const offscreen = document.createElement('canvas');
     offscreen.width = bitmap.width;
     offscreen.height = bitmap.height;
-    offscreen.getContext('2d').drawImage(bitmap, 0, 0);
-    offscreen.toBlob(blob => { picture = blob; }, file.type || 'image/jpeg', 0.92);
+    offscreen.getContext('2d')!.drawImage(bitmap, 0, 0);
+    offscreen.toBlob(blob => { picture = blob ?? undefined; }, file.type || 'image/jpeg', 0.92);
   } catch {
     picture = file;
   }
@@ -154,7 +162,7 @@ function closeCreatePostModal() {
   locationButton.style.display = 'inline';
   locationLoader.style.display = 'none';
   if (videoPlayer.srcObject) {
-    videoPlayer.srcObject.getVideoTracks().forEach(track => track.stop());
+    (videoPlayer.srcObject as MediaStream).getVideoTracks().forEach(track => track.stop());
   }
   setTimeout(() => {
     createPostArea.style.transform = 'translateY(100vh)';
@@ -164,11 +172,17 @@ closeCreatePostModalButton.addEventListener('click', closeCreatePostModal);
 
 function clearCards() {
   while (sharedMomentsArea.hasChildNodes()) {
-    sharedMomentsArea.removeChild(sharedMomentsArea.lastChild);
+    sharedMomentsArea.removeChild(sharedMomentsArea.lastChild!);
   }
 }
 
-function createCard(card) {
+interface PostCard {
+  image: string;
+  title: string;
+  location: string;
+}
+
+function createCard(card: PostCard) {
   const cardWrapper = document.createElement('div');
   cardWrapper.className = 'shared-moment-card mdl-card mdl-shadow--2dp';
   const cardTitle = document.createElement('div');
@@ -192,7 +206,7 @@ function createCard(card) {
   sharedMomentsArea.appendChild(cardWrapper);
 }
 
-function createCards(cards) {
+function createCards(cards: PostCard[]) {
   cards.forEach(card => createCard(card));
 }
 
@@ -204,7 +218,7 @@ function loadDataAndUpdate() {
 
   fetch(url)
     .then(res => (res.ok ? res.json() : null))
-    .then(data => {
+    .then((data: Record<string, PostCard> | null) => {
       if (!data) return;
       networkDataReceived = true;
       clearCards();
@@ -216,7 +230,7 @@ function loadDataAndUpdate() {
     getItems('posts').then(posts => {
       if (!networkDataReceived) {
         clearCards();
-        createCards(posts);
+        createCards(posts as PostCard[]);
       }
     });
   }
@@ -230,9 +244,9 @@ async function submitPost() {
   postData.append('id', id);
   postData.append('title', titleInput.value);
   postData.append('location', locationInput.value);
-  postData.append('file', picture, id + '.png');
-  postData.append('rawLocationLat', fetchedLocation.lat);
-  postData.append('rawLocationLng', fetchedLocation.lng);
+  postData.append('file', picture!, id + '.png');
+  postData.append('rawLocationLat', String(fetchedLocation.lat));
+  postData.append('rawLocationLng', String(fetchedLocation.lng));
 
   try {
     await fetch(
@@ -257,9 +271,9 @@ async function submitPostViaSyncManager() {
   };
   try {
     await writeItem('sync-posts', post);
-    await sw.sync.register('sync-new-posts');
+    await (sw as any).sync.register('sync-new-posts');
     const snackbarContainer = document.querySelector('#confirmation-toast');
-    snackbarContainer.MaterialSnackbar.showSnackbar({
+    (snackbarContainer as any).MaterialSnackbar.showSnackbar({
       message: 'Your Post was saved for syncing!'
     });
   } catch {
@@ -290,8 +304,8 @@ form.addEventListener('submit', async evt => {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', event => {
-    event.ports[0].postMessage('ACK');
-    if (event.data === 'refresh') {
+    (event as MessageEvent).ports[0].postMessage('ACK');
+    if ((event as MessageEvent).data === 'refresh') {
       loadDataAndUpdate();
     }
   });

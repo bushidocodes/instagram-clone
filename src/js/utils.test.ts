@@ -1,4 +1,4 @@
-// fake-indexeddb/auto MUST be imported before utils.js so it patches
+// fake-indexeddb/auto MUST be imported before utils.ts so it patches
 // globalThis.indexedDB before the module-level dbPromise is created.
 import 'fake-indexeddb/auto';
 
@@ -91,9 +91,9 @@ describe('IDB CRUD (posts store)', () => {
 
   it('getItem retrieves a single record by id', async () => {
     await writeItem('posts', { id: '42', title: 'Beta', location: 'LA' });
-    const item = await getItem('posts', '42');
+    const item = await getItem('posts', '42') as { title: string } | undefined;
     expect(item).toBeDefined();
-    expect(item.title).toBe('Beta');
+    expect(item!.title).toBe('Beta');
   });
 
   it('getItem returns undefined for a non-existent id', async () => {
@@ -107,7 +107,7 @@ describe('IDB CRUD (posts store)', () => {
     await deleteItem('posts', 'b');
     const items = await getItems('posts');
     expect(items).toHaveLength(1);
-    expect(items[0].id).toBe('a');
+    expect((items[0] as { id: string }).id).toBe('a');
   });
 
   it('deleteItems clears all records', async () => {
