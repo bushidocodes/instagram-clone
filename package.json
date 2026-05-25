@@ -1,18 +1,25 @@
 {
   "name": "pwa-gram",
   "version": "1.0.0",
-  "description":
-    "A simple Instagram clone built using Progressive Web App techniques.",
+  "description": "A simple Instagram clone built using Progressive Web App techniques.",
   "main": "index.js",
   "scripts": {
-    "start": "http-server -p 1338 -c-1",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite",
     "remote-ios": "remotedebug_ios_webkit_adapter --port=9000"
   },
-  "keywords": ["pwa", "progressive", "web", "app"],
+  "keywords": [
+    "pwa",
+    "progressive",
+    "web",
+    "app"
+  ],
   "author": "Sean McBride",
   "license": "ISC",
   "devDependencies": {
-    "http-server": "^0.10.0",
-    "remotedebug-ios-webkit-adapter": "^0.2.2"
+    "remotedebug-ios-webkit-adapter": "^0.2.2",
+    "vite": "^8.0.14"
   }
 }
