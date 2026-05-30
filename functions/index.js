@@ -33,7 +33,8 @@ function parseMultipart(request) {
 
     busboy.on("file", (name, stream, info) => {
       const { filename, mimeType } = info;
-      const filepath = path.join(os.tmpdir(), filename);
+      const safeFilename = uuidv4() + path.extname(path.basename(filename));
+      const filepath = path.join(os.tmpdir(), safeFilename);
       upload = { file: filepath, type: mimeType };
       const writeStream = fs.createWriteStream(filepath);
       writePromises.push(
