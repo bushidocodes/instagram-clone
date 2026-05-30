@@ -21,6 +21,7 @@
   ],
   "author": "Sean McBride",
   "license": "ISC",
+  "packageManager": "pnpm@11.5.0",
   "devDependencies": {
     "@playwright/test": "^1.60.0",
     "@tailwindcss/vite": "^4.3.0",
