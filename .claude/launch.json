@@ -3,13 +3,13 @@
   "configurations": [
     {
       "name": "Frontend (Vite)",
-      "runtimeExecutable": "npm",
+      "runtimeExecutable": "pnpm",
       "runtimeArgs": ["run", "dev"],
       "port": 1338
     },
     {
       "name": "iOS WebKit Debug Proxy",
-      "runtimeExecutable": "npm",
+      "runtimeExecutable": "pnpm",
       "runtimeArgs": ["run", "remote-ios"],
       "port": 9000
     }
