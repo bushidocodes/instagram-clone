@@ -125,11 +125,12 @@ self.addEventListener('sync', event => {
 
 self.addEventListener('push', event => {
   event.preventDefault();
+  const payload = event.data ? JSON.parse(event.data.text()) : {};
   const {
     title = 'New!',
     content = 'Something new happened!',
     openUrl = '/'
-  } = JSON.parse(event.data.text());
+  } = payload;
   event.waitUntil(
     self.registration.showNotification(title, {
       body: content,
