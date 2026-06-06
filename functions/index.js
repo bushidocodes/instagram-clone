@@ -69,14 +69,19 @@ exports.storePostData = functions.https.onRequest((request, response) => {
       const { fields, upload } = await parseMultipart(request);
 
       const bucket = storage.bucket("pwagram-439bb.appspot.com");
-      const [uploadedFile] = await bucket.upload(upload.file, {
-        metadata: {
-          contentType: upload.type,
+      let uploadedFile;
+      try {
+        [uploadedFile] = await bucket.upload(upload.file, {
           metadata: {
-            firebaseStorageDownloadTokens: uuid
+            contentType: upload.type,
+            metadata: {
+              firebaseStorageDownloadTokens: uuid
+            }
           }
-        }
-      });
+        });
+      } finally {
+        fs.unlink(upload.file, () => {});
+      }
 
       const imageUrl =
         `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
