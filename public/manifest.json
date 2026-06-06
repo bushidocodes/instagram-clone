@@ -1,7 +1,7 @@
 {
   "name": "PWAGram - Instagram Clone",
   "short_name": "PWAGram",
-  "start_url": "/index.html",
+  "start_url": "/",
   "scope": ".",
   "display": "standalone",
   "background_color": "#fff",
