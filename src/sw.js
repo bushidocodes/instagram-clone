@@ -24,18 +24,6 @@ registerRoute(
   })
 );
 
-// CDN assets (Material Design Lite) — cache first, 1-year TTL
-registerRoute(
-  ({ url }) => url.origin === 'https://cdnjs.cloudflare.com',
-  new CacheFirst({
-    cacheName: 'cdn-assets',
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 })
-    ]
-  })
-);
-
 // Firebase posts — network first; on success, sync result into IDB so the
 // browser-side cache-then-network pattern in feed.js sees fresh data.
 const POSTS_URL = 'https://pwagram-439bb.firebaseio.com/posts.json';
