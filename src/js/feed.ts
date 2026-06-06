@@ -299,7 +299,8 @@ form.addEventListener('submit', async evt => {
     await submitPostViaSyncManager();
     clearPostForm();
   } else {
-    submitPost();
+    await submitPost();
+    clearPostForm();
   }
 });
 
