@@ -293,6 +293,10 @@ form.addEventListener('submit', async evt => {
     alert('Please enter valid data!');
     return;
   }
+  if (!picture) {
+    alert('Please capture or pick an image!');
+    return;
+  }
   closeCreatePostModal();
 
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
