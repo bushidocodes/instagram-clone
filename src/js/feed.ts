@@ -310,8 +310,9 @@ form.addEventListener('submit', async evt => {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', event => {
-    (event as MessageEvent).ports[0].postMessage('ACK');
-    if ((event as MessageEvent).data === 'refresh') {
+    const msg = event as MessageEvent;
+    if (msg.ports?.[0]) msg.ports[0].postMessage('ACK');
+    if (msg.data === 'refresh') {
       loadDataAndUpdate();
     }
   });
