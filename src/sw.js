@@ -112,7 +112,6 @@ self.addEventListener('sync', event => {
 // ─── Push notifications ───────────────────────────────────────────────────────
 
 self.addEventListener('push', event => {
-  event.preventDefault();
   const payload = event.data ? JSON.parse(event.data.text()) : {};
   const {
     title = 'New!',
