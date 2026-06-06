@@ -8,6 +8,19 @@ import { openDB } from 'idb';
 // Injected by vite-plugin-pwa at build time ([] in dev)
 precacheAndRoute(self.__WB_MANIFEST);
 
+// ─── IndexedDB ────────────────────────────────────────────────────────────────
+
+const dbPromise = openDB('posts-store', 1, {
+  upgrade(db) {
+    if (!db.objectStoreNames.contains('posts')) {
+      db.createObjectStore('posts', { keyPath: 'id' });
+    }
+    if (!db.objectStoreNames.contains('sync-posts')) {
+      db.createObjectStore('sync-posts', { keyPath: 'id' });
+    }
+  }
+});
+
 // ─── Caching strategies ───────────────────────────────────────────────────────
 
 // Google Fonts — cache first, 1-year TTL
@@ -69,19 +82,6 @@ setCatchHandler(async ({ event }) => {
     return (await matchPrecache('/src/images/failwhale.jpg')) ?? Response.error();
   }
   return Response.error();
-});
-
-// ─── IndexedDB (replaces the legacy idb.js importScripts path) ───────────────
-
-const dbPromise = openDB('posts-store', 1, {
-  upgrade(db) {
-    if (!db.objectStoreNames.contains('posts')) {
-      db.createObjectStore('posts', { keyPath: 'id' });
-    }
-    if (!db.objectStoreNames.contains('sync-posts')) {
-      db.createObjectStore('sync-posts', { keyPath: 'id' });
-    }
-  }
 });
 
 // ─── Background Sync ─────────────────────────────────────────────────────────
