@@ -103,8 +103,7 @@ async function syncNewPosts() {
       postData.append('file', post.picture, `${post.id}.png`);
       const res = await fetch(UPLOAD_POSTS_URL, { method: 'POST', body: postData });
       if (!res.ok) throw new Error(res.statusText);
-      const { id } = await res.json();
-      await db.delete('sync-posts', id);
+      await db.delete('sync-posts', post.id);
     })
   );
   // Notify all open clients to refresh the feed
