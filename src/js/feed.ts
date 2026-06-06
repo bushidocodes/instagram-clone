@@ -258,7 +258,7 @@ async function submitPost() {
       { method: 'POST', body: postData }
     );
     clearPostForm();
-    setTimeout(() => loadDataAndUpdate(), 1000);
+    loadDataAndUpdate();
   } catch {
     // network unavailable — post will sync on reconnect via Background Sync
   }
