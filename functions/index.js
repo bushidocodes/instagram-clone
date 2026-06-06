@@ -68,6 +68,10 @@ exports.storePostData = functions.https.onRequest((request, response) => {
       const uuid = uuidv4();
       const { fields, upload } = await parseMultipart(request);
 
+      if (!upload) {
+        return response.status(400).json({ error: "No file uploaded" });
+      }
+
       const bucket = storage.bucket("pwagram-439bb.appspot.com");
       const [uploadedFile] = await bucket.upload(upload.file, {
         metadata: {
