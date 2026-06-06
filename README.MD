@@ -4,8 +4,8 @@ A simple Instagram clone built for Maximilian Schwarzmüller's "Progressive Web 
 
 # How to Use
 
-You need [Node.js](https://nodejs.org) installed on your machine. Simply download the installer from [nodejs.org](https://nodejs.org) and go through the installation steps.
+You need [Node.js](https://nodejs.org) and [pnpm](https://pnpm.io) installed on your machine. Simply download the Node.js installer from [nodejs.org](https://nodejs.org) and install pnpm via `npm install -g pnpm`.
 
-Once Node.js is installed, open your command prompt or terminal and **navigate into this project folder**. There, run `npm install` to install all required dependencies.
+Once Node.js and pnpm are installed, open your command prompt or terminal and **navigate into this project folder**. There, run `pnpm install` to install all required dependencies.
 
-Finally, run `npm start` to start the development server and visit [localhost:8080](http://localhost:8080) to see the running application.
+Finally, run `pnpm dev` to start the development server and visit [localhost:1338](http://localhost:1338) to see the running application.
