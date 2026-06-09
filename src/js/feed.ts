@@ -285,6 +285,8 @@ async function submitPostViaSyncManager() {
 function clearPostForm() {
   titleInput.value = '';
   locationInput.value = '';
+  picture = undefined;
+  imagePicker.value = '';
 }
 
 form.addEventListener('submit', async evt => {
