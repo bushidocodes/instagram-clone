@@ -103,7 +103,7 @@ async function askForNotificationPermission() {
   const permission = await Notification.requestPermission();
   if (permission === 'granted') {
     enableNotificationsButtons.forEach(btn => {
-      (btn as HTMLElement).style.display = 'inline-block';
+      (btn as HTMLElement).style.display = 'none';
     });
     configurePushSub();
   }
