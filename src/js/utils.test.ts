@@ -133,3 +133,38 @@ describe('IDB CRUD (posts store)', () => {
     expect(afterDelete).toHaveLength(0);
   });
 });
+
+// ─── IDB CRUD (sync-posts store) ──────────────────────────────────────────────
+
+describe('IDB CRUD (sync-posts store)', () => {
+  beforeEach(async () => {
+    await deleteItems('sync-posts');
+  });
+
+  it('writeItem stores a pending post retrievable by getItems', async () => {
+    await writeItem('sync-posts', { id: 's1', title: 'Pending', location: 'NYC' });
+    const items = await getItems('sync-posts');
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ id: 's1', title: 'Pending' });
+  });
+
+  it('getItem returns undefined for a non-existent sync-post id', async () => {
+    expect(await getItem('sync-posts', 'no-such-id')).toBeUndefined();
+  });
+
+  it('deleteItem removes only the targeted sync-post', async () => {
+    await writeItem('sync-posts', { id: 's1', title: 'Keep' });
+    await writeItem('sync-posts', { id: 's2', title: 'Remove' });
+    await deleteItem('sync-posts', 's2');
+    const items = await getItems('sync-posts');
+    expect(items).toHaveLength(1);
+    expect((items[0] as { id: string }).id).toBe('s1');
+  });
+
+  it('deleteItems clears all pending sync-posts', async () => {
+    await writeItem('sync-posts', { id: 's1', title: 'A' });
+    await writeItem('sync-posts', { id: 's2', title: 'B' });
+    await deleteItems('sync-posts');
+    expect(await getItems('sync-posts')).toHaveLength(0);
+  });
+});

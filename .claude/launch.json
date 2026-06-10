@@ -8,6 +8,12 @@
       "port": 1338
     },
     {
+      "name": "Frontend (Production Preview)",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "node_modules\\.bin\\vite.CMD", "preview", "--port", "1339"],
+      "port": 1339
+    },
+    {
       "name": "iOS WebKit Debug Proxy",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["run", "remote-ios"],
