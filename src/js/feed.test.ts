@@ -103,7 +103,7 @@ describe('form submit — SW routing', () => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     // Undo any navigator.serviceWorker injection
-    Object.defineProperty(global.navigator, 'serviceWorker', {
+    Object.defineProperty(globalThis.navigator, 'serviceWorker', {
       value: undefined,
       configurable: true,
       writable: true,
@@ -129,7 +129,7 @@ describe('form submit — SW routing', () => {
   it('calls sync.register (SyncManager path) when SW is active', async () => {
     const registerSpy = vi.fn().mockResolvedValue(undefined);
 
-    Object.defineProperty(global.navigator, 'serviceWorker', {
+    Object.defineProperty(globalThis.navigator, 'serviceWorker', {
       value: {
         getRegistration: vi.fn().mockResolvedValue({ active: { state: 'activated' } }),
         ready: Promise.resolve({ sync: { register: registerSpy } }),
