@@ -1,6 +1,7 @@
 // fake-indexeddb/auto must be imported before feed.ts so IDB is patched at module load
 import 'fake-indexeddb/auto';
 import { vi, describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
+import { getItems, writeItem, deleteItems } from './utils.js';
 
 const FEED_HTML = `
   <button id="share-image-button"></button>
@@ -25,6 +26,8 @@ const FEED_HTML = `
 `;
 
 let clearPostForm: () => void;
+let showToast: (message: string) => void;
+let loadDataAndUpdate: () => void;
 
 beforeAll(async () => {
   document.body.innerHTML = FEED_HTML;
@@ -32,6 +35,8 @@ beforeAll(async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 503 })));
   const mod = await import('./feed.js');
   clearPostForm = (mod as any).clearPostForm;
+  showToast = (mod as any).showToast;
+  loadDataAndUpdate = (mod as any).loadDataAndUpdate;
   vi.unstubAllGlobals();
 });
 
@@ -146,5 +151,91 @@ describe('form submit — SW routing', () => {
     await new Promise(r => setTimeout(r, 500));
 
     expect(registerSpy).toHaveBeenCalledWith('sync-new-posts');
+  });
+
+  it('writes post record to sync-posts IDB store with correct title, location, and picture', async () => {
+    await deleteItems('sync-posts');
+    const registerSpy = vi.fn().mockResolvedValue(undefined);
+
+    Object.defineProperty(globalThis.navigator, 'serviceWorker', {
+      value: {
+        getRegistration: vi.fn().mockResolvedValue({ active: { state: 'activated' } }),
+        ready: Promise.resolve({ sync: { register: registerSpy } }),
+        addEventListener: vi.fn(),
+      },
+      configurable: true,
+      writable: true,
+    });
+    vi.stubGlobal('SyncManager', class {});
+
+    (document.getElementById('title') as HTMLInputElement).value = 'IDB Test Post';
+    (document.getElementById('location') as HTMLInputElement).value = 'Oslo, NO';
+
+    document.querySelector('form')!.dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true })
+    );
+    await new Promise(r => setTimeout(r, 500));
+
+    const records = await getItems('sync-posts') as Array<{ title: string; location: string; picture: unknown }>;
+    expect(records).toHaveLength(1);
+    expect(records[0].title).toBe('IDB Test Post');
+    expect(records[0].location).toBe('Oslo, NO');
+    expect(records[0].picture).toBeDefined();
+  });
+});
+
+// ─── showToast ────────────────────────────────────────────────────────────────
+
+describe('showToast', () => {
+  it('sets #toast-message text content', () => {
+    showToast('Hello from test');
+    expect(document.getElementById('toast-message')!.textContent).toBe('Hello from test');
+  });
+
+  it('adds the "visible" class to #confirmation-toast', () => {
+    showToast('Visible now');
+    expect(document.getElementById('confirmation-toast')!.classList.contains('visible')).toBe(true);
+  });
+});
+
+// ─── loadDataAndUpdate ────────────────────────────────────────────────────────
+
+describe('loadDataAndUpdate', () => {
+  beforeEach(async () => {
+    document.getElementById('shared-moments')!.innerHTML = '';
+    await deleteItems('posts');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('renders cards from a successful network response', async () => {
+    const data = {
+      p1: { image: 'http://example.com/img.jpg', title: 'Network Post', location: 'London, UK' },
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(data), { status: 200 })
+    ));
+
+    loadDataAndUpdate();
+    await new Promise(r => setTimeout(r, 200));
+
+    const cards = document.querySelectorAll('#shared-moments .shared-moment-card');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].textContent).toContain('Network Post');
+    expect(cards[0].textContent).toContain('London, UK');
+  });
+
+  it('falls back to IDB cache when the network request fails', async () => {
+    await writeItem('posts', { id: 'c1', image: 'http://example.com/cached.jpg', title: 'Cached Post', location: 'Berlin, DE' });
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+
+    loadDataAndUpdate();
+    await new Promise(r => setTimeout(r, 200));
+
+    const cards = document.querySelectorAll('#shared-moments .shared-moment-card');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].textContent).toContain('Cached Post');
   });
 });
