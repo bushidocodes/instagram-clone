@@ -282,7 +282,7 @@ async function submitPostViaSyncManager() {
   }
 }
 
-function clearPostForm() {
+export function clearPostForm() {
   titleInput.value = '';
   locationInput.value = '';
   picture = undefined;
