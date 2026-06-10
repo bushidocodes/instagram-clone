@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-function showToast(message: string): void {
+export function showToast(message: string): void {
   const toast = document.querySelector<HTMLDivElement>('#confirmation-toast')!;
   const msg = document.querySelector<HTMLSpanElement>('#toast-message')!;
   msg.textContent = message;
@@ -216,7 +216,7 @@ function createCards(cards: PostCard[]) {
 
 // Cache-then-network: start both fetches in parallel; IDB renders first if
 // the network hasn't responded yet, then network overwrites with fresher data.
-function loadDataAndUpdate() {
+export function loadDataAndUpdate() {
   const url = 'https://pwagram-439bb.firebaseio.com/posts.json';
   let networkDataReceived = false;
 
