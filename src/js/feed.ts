@@ -301,13 +301,16 @@ form.addEventListener('submit', async evt => {
   }
   closeCreatePostModal();
 
-  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+  const swReg = 'serviceWorker' in navigator
+    ? await navigator.serviceWorker.getRegistration()
+    : undefined;
+
+  if (swReg?.active && 'SyncManager' in window) {
     await submitPostViaSyncManager();
-    clearPostForm();
   } else {
     await submitPost();
-    clearPostForm();
   }
+  clearPostForm();
 });
 
 if ('serviceWorker' in navigator) {
