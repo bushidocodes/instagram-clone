@@ -27,7 +27,7 @@
     "@tailwindcss/vite": "^4.3.0",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.1.1",
-    "remotedebug-ios-webkit-adapter": "^0.2.2",
+    "remotedebug-ios-webkit-adapter": "^0.4.2",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
