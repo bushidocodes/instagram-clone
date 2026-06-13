@@ -1,5 +1,6 @@
 import '../css/main.css';
 import { urlBase64ToUint8Array } from './utils.js';
+import { VAPID_PUBLIC_KEY, SUBSCRIPTIONS_URL } from './config.js';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -76,14 +77,12 @@ async function configurePushSub() {
     const existingSub = await sw.pushManager.getSubscription();
     if (existingSub !== null) return;
 
-    const VAPID_PUBLIC_KEY =
-      'BH1lo34DNnIy__lc7nzIMyDr2tBmGqqoRThEoRzoj2GehQ8Yg4_X2JvkHfX06Vbqxjys6I0fz2mGLu2nkC45S5o';
     const newSub = await sw.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY).buffer as ArrayBuffer
     });
     const res = await fetch(
-      'https://pwagram-439bb.firebaseio.com/subscriptions.json',
+      SUBSCRIPTIONS_URL,
       {
         method: 'POST',
         headers: {

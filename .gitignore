@@ -3,6 +3,14 @@ node_modules
 dist
 functions/pwagram-fb-key.json
 
+# Local environment config (keep .env.example tracked)
+.env
+.env.*
+!.env.example
+functions/.env
+functions/.env.*
+!functions/.env.example
+
 # Test output
 test-results/
 playwright-report/
