@@ -1,4 +1,5 @@
 import { getItems, writeItem, dataURItoBlob } from './utils.js';
+import { POSTS_URL, STORE_POST_DATA_URL } from './config.js';
 
 declare global {
   interface Window {
@@ -217,10 +218,9 @@ function createCards(cards: PostCard[]) {
 // Cache-then-network: start both fetches in parallel; IDB renders first if
 // the network hasn't responded yet, then network overwrites with fresher data.
 export function loadDataAndUpdate() {
-  const url = 'https://pwagram-439bb.firebaseio.com/posts.json';
   let networkDataReceived = false;
 
-  fetch(url)
+  fetch(POSTS_URL)
     .then(res => (res.ok ? res.json() : null))
     .then((data: Record<string, PostCard> | null) => {
       if (!data) return;
@@ -253,10 +253,7 @@ async function submitPost() {
   postData.append('rawLocationLng', String(fetchedLocation.lng));
 
   try {
-    await fetch(
-      'https://us-central1-pwagram-439bb.cloudfunctions.net/storePostData',
-      { method: 'POST', body: postData }
-    );
+    await fetch(STORE_POST_DATA_URL, { method: 'POST', body: postData });
     clearPostForm();
     loadDataAndUpdate();
   } catch {

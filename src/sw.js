@@ -4,6 +4,7 @@ import { CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { openDB } from 'idb';
+import { POSTS_URL, STORE_POST_DATA_URL } from './js/config.js';
 
 // Injected by vite-plugin-pwa at build time ([] in dev)
 precacheAndRoute(self.__WB_MANIFEST);
@@ -39,8 +40,6 @@ registerRoute(
 
 // Firebase posts — network first; on success, sync result into IDB so the
 // browser-side cache-then-network pattern in feed.js sees fresh data.
-const POSTS_URL = 'https://pwagram-439bb.firebaseio.com/posts.json';
-
 registerRoute(
   ({ url }) => url.href === POSTS_URL,
   async ({ event }) => {
@@ -74,8 +73,7 @@ setCatchHandler(async ({ event }) => {
 
 // ─── Background Sync ─────────────────────────────────────────────────────────
 
-const UPLOAD_POSTS_URL =
-  'https://us-central1-pwagram-439bb.cloudfunctions.net/storePostData';
+const UPLOAD_POSTS_URL = STORE_POST_DATA_URL;
 
 async function syncNewPosts() {
   const db = await dbPromise;

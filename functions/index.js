@@ -11,14 +11,27 @@ const { Storage } = require("@google-cloud/storage");
 
 const serviceAccount = require("./pwagram-fb-key.json");
 
+// Firebase coordinates — overridable via env (e.g. functions/.env, see
+// .env.example) so a fork can target its own project. Defaults preserve the
+// original `pwagram-439bb` backend. None of these are secrets.
+const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pwagram-439bb";
+const DATABASE_URL =
+  process.env.FIREBASE_DATABASE_URL || `https://${PROJECT_ID}.firebaseio.com/`;
+const STORAGE_BUCKET =
+  process.env.FIREBASE_STORAGE_BUCKET || `${PROJECT_ID}.appspot.com`;
+// VAPID public key is the (non-secret) pair of VAPID_PRIVATE_KEY.
+const VAPID_PUBLIC_KEY =
+  process.env.VAPID_PUBLIC_KEY ||
+  "BH1lo34DNnIy__lc7nzIMyDr2tBmGqqoRThEoRzoj2GehQ8Yg4_X2JvkHfX06Vbqxjys6I0fz2mGLu2nkC45S5o";
+
 const storage = new Storage({
-  projectId: "pwagram-439bb",
+  projectId: PROJECT_ID,
   keyFilename: "pwagram-fb-key.json"
 });
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://pwagram-439bb.firebaseio.com/"
+  databaseURL: DATABASE_URL
 });
 
 // Parse a multipart upload from a Cloud Function request, waiting for all
@@ -72,7 +85,7 @@ exports.storePostData = functions.https.onRequest((request, response) => {
         return response.status(400).json({ error: "No file uploaded" });
       }
 
-      const bucket = storage.bucket("pwagram-439bb.appspot.com");
+      const bucket = storage.bucket(STORAGE_BUCKET);
       let uploadedFile;
       try {
         [uploadedFile] = await bucket.upload(upload.file, {
@@ -106,8 +119,8 @@ exports.storePostData = functions.https.onRequest((request, response) => {
         });
 
       webpush.setVapidDetails(
-        "mailto:bushidocodes@gmail.com",
-        "BH1lo34DNnIy__lc7nzIMyDr2tBmGqqoRThEoRzoj2GehQ8Yg4_X2JvkHfX06Vbqxjys6I0fz2mGLu2nkC45S5o",
+        process.env.VAPID_SUBJECT || "mailto:bushidocodes@gmail.com",
+        VAPID_PUBLIC_KEY,
         process.env.VAPID_PRIVATE_KEY
       );
 
