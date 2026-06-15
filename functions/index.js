@@ -1,6 +1,5 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const cors = require("cors")({ origin: true });
 const webpush = require("web-push");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
@@ -75,85 +74,91 @@ function parseMultipart(request) {
   });
 }
 
-exports.storePostData = functions.https.onRequest((request, response) => {
-  cors(request, response, async () => {
+exports.storePostData = functions.https.onRequest(async (request, response) => {
+  response.set('Access-Control-Allow-Origin', '*');
+  response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.set('Access-Control-Allow-Headers', 'Content-Type');
+  if (request.method === 'OPTIONS') {
+    response.status(204).send('');
+    return;
+  }
+
+  try {
+    const uuid = uuidv4();
+    const { fields, upload } = await parseMultipart(request);
+
+    if (!upload) {
+      return response.status(400).json({ error: "No file uploaded" });
+    }
+
+    const bucket = storage.bucket(STORAGE_BUCKET);
+    let uploadedFile;
     try {
-      const uuid = uuidv4();
-      const { fields, upload } = await parseMultipart(request);
-
-      if (!upload) {
-        return response.status(400).json({ error: "No file uploaded" });
-      }
-
-      const bucket = storage.bucket(STORAGE_BUCKET);
-      let uploadedFile;
-      try {
-        [uploadedFile] = await bucket.upload(upload.file, {
+      [uploadedFile] = await bucket.upload(upload.file, {
+        metadata: {
+          contentType: upload.type,
           metadata: {
-            contentType: upload.type,
-            metadata: {
-              firebaseStorageDownloadTokens: uuid
-            }
+            firebaseStorageDownloadTokens: uuid
           }
-        });
-      } finally {
-        fs.unlink(upload.file, () => {});
-      }
+        }
+      });
+    } finally {
+      fs.unlink(upload.file, () => {});
+    }
 
-      const imageUrl =
-        `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
-        `${encodeURIComponent(uploadedFile.name)}?alt=media&token=${uuid}`;
+    const imageUrl =
+      `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
+      `${encodeURIComponent(uploadedFile.name)}?alt=media&token=${uuid}`;
 
-      await admin
-        .database()
-        .ref("posts")
-        .push({
-          title: fields.title,
-          location: fields.location,
-          id: fields.id,
-          rawLocation: {
-            lat: fields.rawLocationLat,
-            lng: fields.rawLocationLng
-          },
-          image: imageUrl
-        });
-
-      webpush.setVapidDetails(
-        process.env.VAPID_SUBJECT || "mailto:bushidocodes@gmail.com",
-        VAPID_PUBLIC_KEY,
-        process.env.VAPID_PRIVATE_KEY
-      );
-
-      const subscriptionsSnap = await admin
-        .database()
-        .ref("subscriptions")
-        .once("value");
-
-      const pushPromises = [];
-      subscriptionsSnap.forEach(sub => {
-        const pushConfig = {
-          endpoint: sub.val().endpoint,
-          keys: {
-            auth: sub.val().keys.auth,
-            p256dh: sub.val().keys.p256dh
-          }
-        };
-        // Swallow per-subscription failures so one stale endpoint can't abort
-        // the entire request — the post is already saved at this point.
-        pushPromises.push(
-          webpush
-            .sendNotification(
-              pushConfig,
-              JSON.stringify({ title: "New Post", content: "New Post added!", openUrl: "/" })
-            )
-            .catch(() => {})
-        );
+    await admin
+      .database()
+      .ref("posts")
+      .push({
+        title: fields.title,
+        location: fields.location,
+        id: fields.id,
+        rawLocation: {
+          lat: fields.rawLocationLat,
+          lng: fields.rawLocationLng
+        },
+        image: imageUrl
       });
 
-      await Promise.all(pushPromises);
-      response.status(201).json({ message: "Data stored", id: fields.id });
-    } catch (err) {
-      response.status(500).json({ error: err.message });
-    }
-  });
+    webpush.setVapidDetails(
+      process.env.VAPID_SUBJECT || "mailto:bushidocodes@gmail.com",
+      VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY
+    );
+
+    const subscriptionsSnap = await admin
+      .database()
+      .ref("subscriptions")
+      .once("value");
+
+    const pushPromises = [];
+    subscriptionsSnap.forEach(sub => {
+      const pushConfig = {
+        endpoint: sub.val().endpoint,
+        keys: {
+          auth: sub.val().keys.auth,
+          p256dh: sub.val().keys.p256dh
+        }
+      };
+      // Swallow per-subscription failures so one stale endpoint can't abort
+      // the entire request — the post is already saved at this point.
+      pushPromises.push(
+        webpush
+          .sendNotification(
+            pushConfig,
+            JSON.stringify({ title: "New Post", content: "New Post added!", openUrl: "/" })
+          )
+          .catch(() => {})
+      );
+    });
+
+    await Promise.all(pushPromises);
+    response.status(201).json({ message: "Data stored", id: fields.id });
+  } catch (err) {
+    response.status(500).json({ error: err.message });
+  }
 });
