@@ -125,9 +125,14 @@ describe('form submit — SW routing', () => {
     );
     await new Promise(r => setTimeout(r, 500));
 
-    const postCall = fetchSpy.mock.calls.find(c =>
-      String(c[0]).includes('cloudfunctions.net')
-    );
+    const postCall = fetchSpy.mock.calls.find(c => {
+      try {
+        const { hostname } = new URL(String(c[0]));
+        return hostname === 'cloudfunctions.net' || hostname.endsWith('.cloudfunctions.net');
+      } catch {
+        return false;
+      }
+    });
     expect(postCall).toBeDefined();
   });
 
