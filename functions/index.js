@@ -1,14 +1,18 @@
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-const webpush = require("web-push");
-const fs = require("fs");
-const { v4: uuidv4 } = require("uuid");
-const os = require("os");
-const Busboy = require("busboy");
-const path = require("path");
-const { Storage } = require("@google-cloud/storage");
+import * as functions from "firebase-functions";
+import * as admin from "firebase-admin";
+import webpush from "web-push";
+import fs from "node:fs";
+import { v4 as uuidv4 } from "uuid";
+import os from "node:os";
+import Busboy from "busboy";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { Storage } from "@google-cloud/storage";
 
-const serviceAccount = require("./pwagram-fb-key.json");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const serviceAccount = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "pwagram-fb-key.json"), "utf8")
+);
 
 // Firebase coordinates — overridable via env (e.g. functions/.env, see
 // .env.example) so a fork can target its own project. Defaults preserve the
@@ -74,7 +78,7 @@ function parseMultipart(request) {
   });
 }
 
-exports.storePostData = functions.https.onRequest(async (request, response) => {
+export const storePostData = functions.https.onRequest(async (request, response) => {
   response.set('Access-Control-Allow-Origin', '*');
   response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   response.set('Access-Control-Allow-Headers', 'Content-Type');
