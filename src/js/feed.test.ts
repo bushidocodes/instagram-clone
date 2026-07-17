@@ -1,7 +1,7 @@
 // fake-indexeddb/auto must be imported before feed.ts so IDB is patched at module load
-import 'fake-indexeddb/auto';
-import { vi, describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
-import { getItems, writeItem, deleteItems } from './utils.js';
+import "fake-indexeddb/auto";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { deleteItems, getItems, writeItem } from "./utils.js";
 
 const FEED_HTML = `
   <button id="share-image-button"></button>
@@ -32,8 +32,8 @@ let loadDataAndUpdate: () => void;
 beforeAll(async () => {
   document.body.innerHTML = FEED_HTML;
   // Stub fetch before module import — loadDataAndUpdate() fires at module level
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 503 })));
-  const mod = await import('./feed.js');
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 503 })));
+  const mod = await import("./feed.js");
   clearPostForm = (mod as any).clearPostForm;
   showToast = (mod as any).showToast;
   loadDataAndUpdate = (mod as any).loadDataAndUpdate;
@@ -43,92 +43,94 @@ beforeAll(async () => {
 // Injects a File into the imagePicker and waits for the async change handler to set `picture`.
 // Uses Object.defineProperty because jsdom does not expose DataTransfer as a global.
 async function loadPicture(): Promise<void> {
-  const picker = document.getElementById('image-picker') as HTMLInputElement;
-  const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
+  const picker = document.getElementById("image-picker") as HTMLInputElement;
+  const file = new File(["x"], "photo.jpg", { type: "image/jpeg" });
   const fileList = Object.assign([file], { item: (i: number) => fileList[i] ?? null });
-  Object.defineProperty(picker, 'files', { get: () => fileList, configurable: true });
-  picker.dispatchEvent(new Event('change', { bubbles: true }));
-  await new Promise(r => setTimeout(r, 300));
+  Object.defineProperty(picker, "files", { get: () => fileList, configurable: true });
+  picker.dispatchEvent(new Event("change", { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 300));
 }
 
 // ─── clearPostForm ────────────────────────────────────────────────────────────
 
-describe('clearPostForm', () => {
+describe("clearPostForm", () => {
   beforeEach(() => {
-    (document.getElementById('title') as HTMLInputElement).value = 'My Vacation';
-    (document.getElementById('location') as HTMLInputElement).value = 'Paris, FR';
+    (document.getElementById("title") as HTMLInputElement).value = "My Vacation";
+    (document.getElementById("location") as HTMLInputElement).value = "Paris, FR";
   });
 
-  it('clears titleInput', () => {
+  it("clears titleInput", () => {
     clearPostForm();
-    expect((document.getElementById('title') as HTMLInputElement).value).toBe('');
+    expect((document.getElementById("title") as HTMLInputElement).value).toBe("");
   });
 
-  it('clears locationInput', () => {
+  it("clears locationInput", () => {
     clearPostForm();
-    expect((document.getElementById('location') as HTMLInputElement).value).toBe('');
+    expect((document.getElementById("location") as HTMLInputElement).value).toBe("");
   });
 
-  it('clears imagePicker', () => {
+  it("clears imagePicker", () => {
     clearPostForm();
-    expect((document.getElementById('image-picker') as HTMLInputElement).value).toBe('');
+    expect((document.getElementById("image-picker") as HTMLInputElement).value).toBe("");
   });
 
-  it('resets picture — subsequent submit without a new image is rejected', async () => {
+  it("resets picture — subsequent submit without a new image is rejected", async () => {
     await loadPicture();
     clearPostForm();
 
     // Refill text fields but do NOT pick a new image
-    (document.getElementById('title') as HTMLInputElement).value = 'Second Post';
-    (document.getElementById('location') as HTMLInputElement).value = 'Berlin, DE';
+    (document.getElementById("title") as HTMLInputElement).value = "Second Post";
+    (document.getElementById("location") as HTMLInputElement).value = "Berlin, DE";
 
-    let alerted = '';
-    vi.stubGlobal('alert', (msg: string) => { alerted = msg; });
-    document.querySelector('form')!.dispatchEvent(
-      new Event('submit', { bubbles: true, cancelable: true })
-    );
-    await new Promise(r => setTimeout(r, 100));
+    let alerted = "";
+    vi.stubGlobal("alert", (msg: string) => {
+      alerted = msg;
+    });
+    document
+      .querySelector("form")!
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 100));
 
-    expect(alerted).toBe('Please capture or pick an image!');
+    expect(alerted).toBe("Please capture or pick an image!");
     vi.unstubAllGlobals();
   });
 });
 
 // ─── Form submit — SW routing ─────────────────────────────────────────────────
 
-describe('form submit — SW routing', () => {
+describe("form submit — SW routing", () => {
   beforeEach(async () => {
     await loadPicture();
-    (document.getElementById('title') as HTMLInputElement).value = 'Test Post';
-    (document.getElementById('location') as HTMLInputElement).value = 'Tokyo, JP';
-    vi.stubGlobal('alert', vi.fn());
+    (document.getElementById("title") as HTMLInputElement).value = "Test Post";
+    (document.getElementById("location") as HTMLInputElement).value = "Tokyo, JP";
+    vi.stubGlobal("alert", vi.fn());
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     // Undo any navigator.serviceWorker injection
-    Object.defineProperty(globalThis.navigator, 'serviceWorker', {
+    Object.defineProperty(globalThis.navigator, "serviceWorker", {
       value: undefined,
       configurable: true,
       writable: true,
     });
   });
 
-  it('calls fetch (submitPost path) when no active SW registration', async () => {
+  it("calls fetch (submitPost path) when no active SW registration", async () => {
     // jsdom has no serviceWorker by default → swReg is undefined → submitPost path
     const fetchSpy = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
-    vi.stubGlobal('fetch', fetchSpy);
+    vi.stubGlobal("fetch", fetchSpy);
 
-    document.querySelector('form')!.dispatchEvent(
-      new Event('submit', { bubbles: true, cancelable: true })
-    );
-    await new Promise(r => setTimeout(r, 500));
+    document
+      .querySelector("form")!
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 500));
 
-    const postCall = fetchSpy.mock.calls.find(c => {
+    const postCall = fetchSpy.mock.calls.find((c) => {
       try {
         const { hostname } = new URL(String(c[0]));
-        return hostname === 'cloudfunctions.net' || hostname.endsWith('.cloudfunctions.net');
+        return hostname === "cloudfunctions.net" || hostname.endsWith(".cloudfunctions.net");
       } catch {
         return false;
       }
@@ -136,111 +138,121 @@ describe('form submit — SW routing', () => {
     expect(postCall).toBeDefined();
   });
 
-  it('calls sync.register (SyncManager path) when SW is active', async () => {
+  it("calls sync.register (SyncManager path) when SW is active", async () => {
     const registerSpy = vi.fn().mockResolvedValue(undefined);
 
-    Object.defineProperty(globalThis.navigator, 'serviceWorker', {
+    Object.defineProperty(globalThis.navigator, "serviceWorker", {
       value: {
-        getRegistration: vi.fn().mockResolvedValue({ active: { state: 'activated' } }),
+        getRegistration: vi.fn().mockResolvedValue({ active: { state: "activated" } }),
         ready: Promise.resolve({ sync: { register: registerSpy } }),
         addEventListener: vi.fn(),
       },
       configurable: true,
       writable: true,
     });
-    vi.stubGlobal('SyncManager', class {});
+    vi.stubGlobal("SyncManager", class {});
 
-    document.querySelector('form')!.dispatchEvent(
-      new Event('submit', { bubbles: true, cancelable: true })
-    );
-    await new Promise(r => setTimeout(r, 500));
+    document
+      .querySelector("form")!
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 500));
 
-    expect(registerSpy).toHaveBeenCalledWith('sync-new-posts');
+    expect(registerSpy).toHaveBeenCalledWith("sync-new-posts");
   });
 
-  it('writes post record to sync-posts IDB store with correct title, location, and picture', async () => {
-    await deleteItems('sync-posts');
+  it("writes post record to sync-posts IDB store with correct title, location, and picture", async () => {
+    await deleteItems("sync-posts");
     const registerSpy = vi.fn().mockResolvedValue(undefined);
 
-    Object.defineProperty(globalThis.navigator, 'serviceWorker', {
+    Object.defineProperty(globalThis.navigator, "serviceWorker", {
       value: {
-        getRegistration: vi.fn().mockResolvedValue({ active: { state: 'activated' } }),
+        getRegistration: vi.fn().mockResolvedValue({ active: { state: "activated" } }),
         ready: Promise.resolve({ sync: { register: registerSpy } }),
         addEventListener: vi.fn(),
       },
       configurable: true,
       writable: true,
     });
-    vi.stubGlobal('SyncManager', class {});
+    vi.stubGlobal("SyncManager", class {});
 
-    (document.getElementById('title') as HTMLInputElement).value = 'IDB Test Post';
-    (document.getElementById('location') as HTMLInputElement).value = 'Oslo, NO';
+    (document.getElementById("title") as HTMLInputElement).value = "IDB Test Post";
+    (document.getElementById("location") as HTMLInputElement).value = "Oslo, NO";
 
-    document.querySelector('form')!.dispatchEvent(
-      new Event('submit', { bubbles: true, cancelable: true })
-    );
-    await new Promise(r => setTimeout(r, 500));
+    document
+      .querySelector("form")!
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 500));
 
-    const records = await getItems('sync-posts') as Array<{ title: string; location: string; picture: unknown }>;
+    const records = (await getItems("sync-posts")) as Array<{
+      title: string;
+      location: string;
+      picture: unknown;
+    }>;
     expect(records).toHaveLength(1);
-    expect(records[0].title).toBe('IDB Test Post');
-    expect(records[0].location).toBe('Oslo, NO');
+    expect(records[0].title).toBe("IDB Test Post");
+    expect(records[0].location).toBe("Oslo, NO");
     expect(records[0].picture).toBeDefined();
   });
 });
 
 // ─── showToast ────────────────────────────────────────────────────────────────
 
-describe('showToast', () => {
-  it('sets #toast-message text content', () => {
-    showToast('Hello from test');
-    expect(document.getElementById('toast-message')!.textContent).toBe('Hello from test');
+describe("showToast", () => {
+  it("sets #toast-message text content", () => {
+    showToast("Hello from test");
+    expect(document.getElementById("toast-message")!.textContent).toBe("Hello from test");
   });
 
   it('adds the "visible" class to #confirmation-toast', () => {
-    showToast('Visible now');
-    expect(document.getElementById('confirmation-toast')!.classList.contains('visible')).toBe(true);
+    showToast("Visible now");
+    expect(document.getElementById("confirmation-toast")!.classList.contains("visible")).toBe(true);
   });
 });
 
 // ─── loadDataAndUpdate ────────────────────────────────────────────────────────
 
-describe('loadDataAndUpdate', () => {
+describe("loadDataAndUpdate", () => {
   beforeEach(async () => {
-    document.getElementById('shared-moments')!.innerHTML = '';
-    await deleteItems('posts');
+    document.getElementById("shared-moments")!.innerHTML = "";
+    await deleteItems("posts");
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it('renders cards from a successful network response', async () => {
+  it("renders cards from a successful network response", async () => {
     const data = {
-      p1: { image: 'http://example.com/img.jpg', title: 'Network Post', location: 'London, UK' },
+      p1: { image: "http://example.com/img.jpg", title: "Network Post", location: "London, UK" },
     };
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
-      new Response(JSON.stringify(data), { status: 200 })
-    ));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(JSON.stringify(data), { status: 200 })),
+    );
 
     loadDataAndUpdate();
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 200));
 
-    const cards = document.querySelectorAll('#shared-moments .shared-moment-card');
+    const cards = document.querySelectorAll("#shared-moments .shared-moment-card");
     expect(cards).toHaveLength(1);
-    expect(cards[0].textContent).toContain('Network Post');
-    expect(cards[0].textContent).toContain('London, UK');
+    expect(cards[0].textContent).toContain("Network Post");
+    expect(cards[0].textContent).toContain("London, UK");
   });
 
-  it('falls back to IDB cache when the network request fails', async () => {
-    await writeItem('posts', { id: 'c1', image: 'http://example.com/cached.jpg', title: 'Cached Post', location: 'Berlin, DE' });
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+  it("falls back to IDB cache when the network request fails", async () => {
+    await writeItem("posts", {
+      id: "c1",
+      image: "http://example.com/cached.jpg",
+      title: "Cached Post",
+      location: "Berlin, DE",
+    });
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
 
     loadDataAndUpdate();
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 200));
 
-    const cards = document.querySelectorAll('#shared-moments .shared-moment-card');
+    const cards = document.querySelectorAll("#shared-moments .shared-moment-card");
     expect(cards).toHaveLength(1);
-    expect(cards[0].textContent).toContain('Cached Post');
+    expect(cards[0].textContent).toContain("Cached Post");
   });
 });
