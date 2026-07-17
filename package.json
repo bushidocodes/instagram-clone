@@ -10,7 +10,9 @@
     "start": "vite",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write ."
   },
   "keywords": [
     "pwa",
@@ -22,6 +24,7 @@
   "license": "ISC",
   "packageManager": "pnpm@11.5.0",
   "devDependencies": {
+    "@biomejs/biome": "2.5.3",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.3.2",
     "fake-indexeddb": "^6.2.5",

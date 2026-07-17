@@ -1,27 +1,25 @@
-import * as functions from "firebase-functions";
-import * as admin from "firebase-admin";
-import webpush from "web-push";
 import fs from "node:fs";
-import { v4 as uuidv4 } from "uuid";
 import os from "node:os";
-import Busboy from "busboy";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Storage } from "@google-cloud/storage";
+import Busboy from "busboy";
+import * as admin from "firebase-admin";
+import * as functions from "firebase-functions";
+import { v4 as uuidv4 } from "uuid";
+import webpush from "web-push";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const serviceAccount = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "pwagram-fb-key.json"), "utf8")
+  fs.readFileSync(path.join(__dirname, "pwagram-fb-key.json"), "utf8"),
 );
 
 // Firebase coordinates — overridable via env (e.g. functions/.env, see
 // .env.example) so a fork can target its own project. Defaults preserve the
 // original `pwagram-439bb` backend. None of these are secrets.
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "pwagram-439bb";
-const DATABASE_URL =
-  process.env.FIREBASE_DATABASE_URL || `https://${PROJECT_ID}.firebaseio.com/`;
-const STORAGE_BUCKET =
-  process.env.FIREBASE_STORAGE_BUCKET || `${PROJECT_ID}.appspot.com`;
+const DATABASE_URL = process.env.FIREBASE_DATABASE_URL || `https://${PROJECT_ID}.firebaseio.com/`;
+const STORAGE_BUCKET = process.env.FIREBASE_STORAGE_BUCKET || `${PROJECT_ID}.appspot.com`;
 // VAPID public key is the (non-secret) pair of VAPID_PRIVATE_KEY.
 const VAPID_PUBLIC_KEY =
   process.env.VAPID_PUBLIC_KEY ||
@@ -29,12 +27,12 @@ const VAPID_PUBLIC_KEY =
 
 const storage = new Storage({
   projectId: PROJECT_ID,
-  keyFilename: "pwagram-fb-key.json"
+  keyFilename: "pwagram-fb-key.json",
 });
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: DATABASE_URL
+  databaseURL: DATABASE_URL,
 });
 
 // Parse a multipart upload from a Cloud Function request, waiting for all
@@ -57,7 +55,7 @@ function parseMultipart(request) {
         new Promise((res, rej) => {
           writeStream.on("finish", res);
           writeStream.on("error", rej);
-        })
+        }),
       );
       stream.pipe(writeStream);
     });
@@ -79,11 +77,11 @@ function parseMultipart(request) {
 }
 
 export const storePostData = functions.https.onRequest(async (request, response) => {
-  response.set('Access-Control-Allow-Origin', '*');
-  response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  response.set('Access-Control-Allow-Headers', 'Content-Type');
-  if (request.method === 'OPTIONS') {
-    response.status(204).send('');
+  response.set("Access-Control-Allow-Origin", "*");
+  response.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  response.set("Access-Control-Allow-Headers", "Content-Type");
+  if (request.method === "OPTIONS") {
+    response.status(204).send("");
     return;
   }
 
@@ -102,9 +100,9 @@ export const storePostData = functions.https.onRequest(async (request, response)
         metadata: {
           contentType: upload.type,
           metadata: {
-            firebaseStorageDownloadTokens: uuid
-          }
-        }
+            firebaseStorageDownloadTokens: uuid,
+          },
+        },
       });
     } finally {
       fs.unlink(upload.file, () => {});
@@ -123,30 +121,27 @@ export const storePostData = functions.https.onRequest(async (request, response)
         id: fields.id,
         rawLocation: {
           lat: fields.rawLocationLat,
-          lng: fields.rawLocationLng
+          lng: fields.rawLocationLng,
         },
-        image: imageUrl
+        image: imageUrl,
       });
 
     webpush.setVapidDetails(
       process.env.VAPID_SUBJECT || "mailto:bushidocodes@gmail.com",
       VAPID_PUBLIC_KEY,
-      process.env.VAPID_PRIVATE_KEY
+      process.env.VAPID_PRIVATE_KEY,
     );
 
-    const subscriptionsSnap = await admin
-      .database()
-      .ref("subscriptions")
-      .once("value");
+    const subscriptionsSnap = await admin.database().ref("subscriptions").once("value");
 
     const pushPromises = [];
-    subscriptionsSnap.forEach(sub => {
+    subscriptionsSnap.forEach((sub) => {
       const pushConfig = {
         endpoint: sub.val().endpoint,
         keys: {
           auth: sub.val().keys.auth,
-          p256dh: sub.val().keys.p256dh
-        }
+          p256dh: sub.val().keys.p256dh,
+        },
       };
       // Swallow per-subscription failures so one stale endpoint can't abort
       // the entire request — the post is already saved at this point.
@@ -154,9 +149,9 @@ export const storePostData = functions.https.onRequest(async (request, response)
         webpush
           .sendNotification(
             pushConfig,
-            JSON.stringify({ title: "New Post", content: "New Post added!", openUrl: "/" })
+            JSON.stringify({ title: "New Post", content: "New Post added!", openUrl: "/" }),
           )
-          .catch(() => {})
+          .catch(() => {}),
       );
     });
 
