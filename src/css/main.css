@@ -46,6 +46,7 @@
 #create-post {
   z-index: 1001;
   position: fixed;
+  display: none;
   width: 100%;
   min-height: calc(100vh - 56px);
   overflow-y: scroll;
@@ -55,6 +56,17 @@
   text-align: center;
   transform: translateY(100vh);
   transition: transform 0.3s;
+}
+
+#feed-status {
+  max-width: 36rem;
+  margin: 0 auto 1.5rem;
+  text-align: center;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+#feed-status[data-kind="error"] {
+  color: #6b21a8;
 }
 #create-post video,
 #create-post canvas {
