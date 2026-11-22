@@ -41,6 +41,6 @@
     "workbox-strategies": "^7.4.1"
   },
   "dependencies": {
-    "idb": "^8.0.3"
+    "idb": "^8.0.4"
   }
 }
