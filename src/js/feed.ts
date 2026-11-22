@@ -153,21 +153,35 @@ imagePicker.addEventListener("change", async (event) => {
   }
 });
 
-async function openCreatePostModal() {
+let closeHideTimer: number | undefined;
+
+export function openCreatePostModal() {
+  if (closeHideTimer !== undefined) {
+    window.clearTimeout(closeHideTimer);
+    closeHideTimer = undefined;
+  }
+  createPostArea.style.display = "block";
+  // Wait a frame so the display change is applied before the slide-up starts.
   setTimeout(() => {
     createPostArea.style.transform = "translateY(0)";
   }, 1);
   initializeMedia();
   initializeLocation();
   if (window.deferredPrompt) {
-    window.deferredPrompt.prompt();
-    await window.deferredPrompt.userChoice;
-    window.deferredPrompt = null;
+    void window.deferredPrompt.prompt();
+    void window.deferredPrompt.userChoice.then(() => {
+      window.deferredPrompt = null;
+    });
   }
 }
 shareImageButton.addEventListener("click", openCreatePostModal);
 
-function closeCreatePostModal() {
+function hideCreatePostArea() {
+  createPostArea.style.display = "none";
+  closeHideTimer = undefined;
+}
+
+export function closeCreatePostModal() {
   imagePickerArea.style.display = "none";
   videoPlayer.style.display = "none";
   canvasElement.style.display = "none";
@@ -177,9 +191,19 @@ function closeCreatePostModal() {
   if (videoPlayer.srcObject) {
     (videoPlayer.srcObject as MediaStream).getVideoTracks().forEach((track) => track.stop());
   }
-  setTimeout(() => {
-    createPostArea.style.transform = "translateY(100vh)";
-  }, 1);
+  createPostArea.style.transform = "translateY(100vh)";
+  const onEnd = (event: TransitionEvent) => {
+    if (event.target !== createPostArea || event.propertyName !== "transform") return;
+    createPostArea.removeEventListener("transitionend", onEnd);
+    hideCreatePostArea();
+  };
+  createPostArea.addEventListener("transitionend", onEnd);
+  // Fallback for environments (and reduced-motion) that never fire transitionend.
+  if (closeHideTimer !== undefined) window.clearTimeout(closeHideTimer);
+  closeHideTimer = window.setTimeout(() => {
+    createPostArea.removeEventListener("transitionend", onEnd);
+    hideCreatePostArea();
+  }, 350);
 }
 closeCreatePostModalButton.addEventListener("click", closeCreatePostModal);
 
@@ -221,32 +245,90 @@ function createCards(cards: PostCard[]) {
   cards.forEach((card) => createCard(card));
 }
 
-// Cache-then-network: start both fetches in parallel; IDB renders first if
-// the network hasn't responded yet, then network overwrites with fresher data.
-export function loadDataAndUpdate() {
-  let networkDataReceived = false;
+// Sample moments bundled with the app. Used only when the live Firebase feed
+// cannot be reached *and* there is nothing in IDB — we do not provision a
+// cloud project just to populate the demo.
+export const FALLBACK_POSTS: PostCard[] = [
+  {
+    image: "/src/images/sf-boat.jpg",
+    title: "Sailboats at the pier",
+    location: "San Francisco, CA",
+  },
+  {
+    image: "/src/images/main-image.jpg",
+    title: "A walk downtown",
+    location: "San Francisco, CA",
+  },
+];
 
-  fetch(POSTS_URL)
-    .then((res) => (res.ok ? res.json() : null))
-    .then((data: Record<string, PostCard> | null) => {
-      if (!data) return;
-      networkDataReceived = true;
-      clearCards();
-      createCards(Object.values(data));
-    })
-    .catch(() => {});
+function setFeedStatus(message: string | null, kind: "empty" | "error" | null = null): void {
+  const el = document.getElementById("feed-status");
+  if (!el) return;
+  if (!message) {
+    el.hidden = true;
+    el.textContent = "";
+    el.removeAttribute("data-kind");
+    return;
+  }
+  el.hidden = false;
+  el.textContent = message;
+  if (kind) el.dataset.kind = kind;
+  else el.removeAttribute("data-kind");
+}
 
-  if ("indexedDB" in window) {
-    getItems("posts").then((posts) => {
-      if (!networkDataReceived) {
-        clearCards();
-        createCards(posts as PostCard[]);
-      }
-    });
+async function readCachedPosts(): Promise<PostCard[]> {
+  if (!("indexedDB" in window)) return [];
+  try {
+    return (await getItems("posts")) as PostCard[];
+  } catch {
+    return [];
   }
 }
 
-loadDataAndUpdate();
+// Prefer the live feed, then IDB, then a small local sample so a 404/offline
+// demo still shows something rather than a blank page.
+export async function loadDataAndUpdate(): Promise<void> {
+  const cachedPromise = readCachedPosts();
+
+  let network: { ok: true; posts: PostCard[] } | { ok: false };
+  try {
+    const res = await fetch(POSTS_URL);
+    if (!res.ok) {
+      network = { ok: false };
+    } else {
+      const data = (await res.json()) as Record<string, PostCard> | null;
+      network = { ok: true, posts: data ? Object.values(data) : [] };
+    }
+  } catch {
+    network = { ok: false };
+  }
+
+  const cached = await cachedPromise;
+
+  if (network.ok) {
+    clearCards();
+    if (network.posts.length) {
+      setFeedStatus(null);
+      createCards(network.posts);
+    } else {
+      setFeedStatus("No moments yet — tap + to share one.", "empty");
+    }
+    return;
+  }
+
+  if (cached.length) {
+    clearCards();
+    setFeedStatus(null);
+    createCards(cached);
+    return;
+  }
+
+  clearCards();
+  setFeedStatus("Live feed is unavailable right now. Showing sample moments.", "error");
+  createCards(FALLBACK_POSTS);
+}
+
+void loadDataAndUpdate();
 
 async function submitPost() {
   const id = new Date().toISOString();

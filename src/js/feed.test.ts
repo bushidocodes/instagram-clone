@@ -21,13 +21,17 @@ const FEED_HTML = `
       <button id="close-create-post-modal-btn" type="button">Close</button>
     </form>
   </div>
+  <p id="feed-status" hidden></p>
   <div id="shared-moments"></div>
   <div id="confirmation-toast"><span id="toast-message"></span></div>
 `;
 
 let clearPostForm: () => void;
 let showToast: (message: string) => void;
-let loadDataAndUpdate: () => void;
+let loadDataAndUpdate: () => Promise<void>;
+let openCreatePostModal: () => void;
+let closeCreatePostModal: () => void;
+let FALLBACK_POSTS: Array<{ title: string; location: string; image: string }>;
 
 beforeAll(async () => {
   document.body.innerHTML = FEED_HTML;
@@ -37,6 +41,9 @@ beforeAll(async () => {
   clearPostForm = (mod as any).clearPostForm;
   showToast = (mod as any).showToast;
   loadDataAndUpdate = (mod as any).loadDataAndUpdate;
+  openCreatePostModal = (mod as any).openCreatePostModal;
+  closeCreatePostModal = (mod as any).closeCreatePostModal;
+  FALLBACK_POSTS = (mod as any).FALLBACK_POSTS;
   vi.unstubAllGlobals();
 });
 
@@ -230,13 +237,13 @@ describe("loadDataAndUpdate", () => {
       vi.fn().mockResolvedValue(new Response(JSON.stringify(data), { status: 200 })),
     );
 
-    loadDataAndUpdate();
-    await new Promise((r) => setTimeout(r, 200));
+    await loadDataAndUpdate();
 
     const cards = document.querySelectorAll("#shared-moments .shared-moment-card");
     expect(cards).toHaveLength(1);
     expect(cards[0].textContent).toContain("Network Post");
     expect(cards[0].textContent).toContain("London, UK");
+    expect(document.getElementById("feed-status")!.hidden).toBe(true);
   });
 
   it("falls back to IDB cache when the network request fails", async () => {
@@ -248,11 +255,58 @@ describe("loadDataAndUpdate", () => {
     });
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
 
-    loadDataAndUpdate();
-    await new Promise((r) => setTimeout(r, 200));
+    await loadDataAndUpdate();
 
     const cards = document.querySelectorAll("#shared-moments .shared-moment-card");
     expect(cards).toHaveLength(1);
     expect(cards[0].textContent).toContain("Cached Post");
+    expect(document.getElementById("feed-status")!.hidden).toBe(true);
+  });
+
+  it("shows a friendly empty state when the live feed has no posts", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({}), { status: 200 })),
+    );
+
+    await loadDataAndUpdate();
+
+    expect(document.querySelectorAll("#shared-moments .shared-moment-card")).toHaveLength(0);
+    const status = document.getElementById("feed-status")!;
+    expect(status.hidden).toBe(false);
+    expect(status.textContent).toMatch(/no moments yet/i);
+    expect(status.dataset.kind).toBe("empty");
+  });
+
+  it("shows sample moments and an error status when the live feed 404s and IDB is empty", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("not found", { status: 404 })));
+
+    await loadDataAndUpdate();
+
+    const cards = document.querySelectorAll("#shared-moments .shared-moment-card");
+    expect(cards).toHaveLength(FALLBACK_POSTS.length);
+    expect(cards[0].textContent).toContain(FALLBACK_POSTS[0].title);
+    const status = document.getElementById("feed-status")!;
+    expect(status.hidden).toBe(false);
+    expect(status.textContent).toMatch(/live feed is unavailable/i);
+    expect(status.dataset.kind).toBe("error");
+  });
+});
+
+describe("create-post modal", () => {
+  it("shows #create-post on open and sets display:none after close", async () => {
+    const modal = document.getElementById("create-post") as HTMLDivElement;
+    modal.style.display = "none";
+    modal.style.transition = "none";
+
+    openCreatePostModal();
+    expect(modal.style.display).toBe("block");
+    await new Promise((r) => setTimeout(r, 5));
+    expect(modal.style.transform).toMatch(/translateY\(0(px)?\)/);
+
+    closeCreatePostModal();
+    expect(modal.style.transform).toMatch(/translateY\(100vh\)/);
+    await new Promise((r) => setTimeout(r, 400));
+    expect(modal.style.display).toBe("none");
   });
 });

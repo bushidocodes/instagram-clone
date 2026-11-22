@@ -94,14 +94,39 @@ async function configurePushSub() {
   }
 }
 
+/** Show the button when the Notification API exists and permission is not yet granted. */
+export function shouldShowEnableNotifications(
+  notification: { permission: NotificationPermission } | undefined,
+): boolean {
+  return Boolean(notification) && notification!.permission !== "granted";
+}
+
+export function updateNotificationButtonVisibility(
+  buttons: ArrayLike<HTMLElement> = enableNotificationsButtons,
+  notification: { permission: NotificationPermission } | undefined = typeof Notification ===
+  "undefined"
+    ? undefined
+    : Notification,
+): void {
+  const display = shouldShowEnableNotifications(notification) ? "inline-block" : "none";
+  Array.from(buttons).forEach((btn) => {
+    btn.style.display = display;
+  });
+}
+
 async function askForNotificationPermission() {
   const permission = await Notification.requestPermission();
+  updateNotificationButtonVisibility();
   if (permission === "granted") {
-    enableNotificationsButtons.forEach((btn) => {
-      (btn as HTMLElement).style.display = "none";
-    });
     configurePushSub();
   }
+}
+
+if ("Notification" in window) {
+  enableNotificationsButtons.forEach((btn) => {
+    btn.addEventListener("click", askForNotificationPermission);
+  });
+  updateNotificationButtonVisibility();
 }
 
 if ("serviceWorker" in navigator) {
@@ -121,12 +146,5 @@ if ("serviceWorker" in navigator) {
         ),
       )
       .catch(() => {});
-  }
-
-  if ("Notification" in window && Notification.permission === "default") {
-    enableNotificationsButtons.forEach((btn) => {
-      (btn as HTMLElement).style.display = "inline-block";
-      btn.addEventListener("click", askForNotificationPermission);
-    });
   }
 }
