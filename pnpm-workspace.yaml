@@ -1,2 +1,6 @@
 overrides:
   undici: ">=7.29.0 <8.0.0"
+  # workbox-build 7.4.1 depends on glob ^11, which locks minimatch 10.x.
+  # GHSA-g3hv-75wg-m249 is fixed only in minimatch >=11.0.1, and glob 14 is
+  # the first release on that line. workbox-build only calls globSync().
+  "workbox-build>glob": ">=14.0.6 <15.0.0"
